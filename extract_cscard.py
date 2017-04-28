@@ -5,6 +5,7 @@ import re
 DATA_PATH = '/home/jgp/srproj/data'
 data_files = os.listdir(DATA_PATH)
 data_paths = [os.path.join(DATA_PATH, x) for x in data_files]
+LOAD_PATH = '/home/jgp/load/data'
 
 def guess_data_type(header, value):
     """
@@ -34,11 +35,13 @@ def extract_csv(filename):
 
         headers = spamreader.next()
         value_row = spamreader.next()
-
         for col_name, value in zip(headers, value_row):
             schema_dict[col_name] = guess_data_type(col_name, value)
+    print("{} keys".format(len(schema_dict)))
+    return schema_dict
 
-    f = open('schema_cscard.sql', 'w')
+def dump_to_csv(filename, schema_dict):
+    f = open(filename, 'w')
     f.truncate()
     f.write("CREATE TABLE college_scorecard ( \n")
     for key in schema_dict.keys():
@@ -46,6 +49,8 @@ def extract_csv(filename):
         f.write(feature)
     f.write("CONSTRAINT persons_pkey PRIMARY KEY (UNITID) )")
     f.close()
+    return filename
+
 
 def apply_xform():
     """
@@ -55,6 +60,9 @@ def apply_xform():
 
 
 if __name__ == "__main__":
-    for data_path in data_paths:
-        extract_csv(data_path)
-
+    for data_file in data_files:
+        data_path = os.path.join(DATA_PATH, data_file)
+        load_path = os.path.join(LOAD_PATH, data_file)
+        schema_dict = extract_csv(data_path)
+        f = dump_to_csv(load_path[:-4] + 'schema.sql', schema_dict)
+        print("wrote to:", f)
